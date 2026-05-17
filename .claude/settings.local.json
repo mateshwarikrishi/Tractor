@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node -v; pnpm -v; \\(Get-Command psql -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(pnpm create t3-app@latest . --CI --trpc --prisma --tailwind --appRouter --dbProvider postgres --noGit)",
+      "PowerShell($env:CI = \"true\"; $env:npm_config_yes = \"true\"; pnpm create t3-app@latest . --CI --trpc --prisma --tailwind --appRouter --dbProvider postgres --noGit --noInstall)",
+      "Bash(pnpm create *)",
+      "Bash(winpty --version)",
+      "Read(//usr/**)",
+      "Bash(winpty -- pnpm create t3-app@latest . --CI --trpc --prisma --tailwind --appRouter --dbProvider postgres --noGit --noInstall)",
+      "Bash(cd \"/d/Projects/Website Projects/tractor\" && ls)",
+      "Read(//d/d/Projects/Website Projects/**)",
+      "Bash(cd \"/d/Projects/Website Projects/tractor\" && rm -rf node_modules package.json package-lock.json && ls)",
+      "Bash(ls /c/Users/eakan/AppData/Roaming/nvm/ | head -5; which nvm)",
+      "Read(//c/Users/eakan/AppData/Roaming/nvm//**)",
+      "PowerShell(nvm use 24.15.0)",
+      "PowerShell(node -v)",
+      "PowerShell(pnpm -v)",
+      "PowerShell($nodePath = \"C:\\\\Users\\\\eakan\\\\AppData\\\\Roaming\\\\nvm\\\\v24.15.0\"; if \\(Test-Path $nodePath\\) { $env:PATH = \"$nodePath;$env:PATH\"; node -v; pnpm -v } else { Get-ChildItem \"C:\\\\Users\\\\eakan\\\\AppData\\\\Roaming\\\\nvm\\\\\" })",
+      "PowerShell($nodePath = \"C:\\\\Users\\\\eakan\\\\AppData\\\\Roaming\\\\nvm\\\\v24.15.0\"; $env:PATH = \"$nodePath;$env:PATH\"; npm root -g; npm list -g --depth=0 2>&1 | Select-String pnpm)",
+      "PowerShell($nodePath = \"C:\\\\Users\\\\eakan\\\\AppData\\\\Roaming\\\\nvm\\\\v24.15.0\"; $env:PATH = \"$nodePath;$env:PATH\"; npm install -g pnpm; pnpm -v)",
+      "Bash(ls \"/c/Program Files/nodejs/\" | grep pnpm)",
+      "Read(//c/Program Files/nodejs//**)",
+      "Bash(pnpm -v)",
+      "Bash(winpty cmd *)",
+      "PowerShell($nodePath = \"C:\\\\Users\\\\eakan\\\\AppData\\\\Roaming\\\\nvm\\\\v24.15.0\"; $env:PATH = \"$nodePath;$env:PATH\"; $env:CI = \"true\"; Set-Location \"D:\\\\Projects\\\\Website Projects\\\\tractor\"; cmd /c \"pnpm create t3-app@latest . --CI --trpc --prisma --tailwind --appRouter --dbProvider postgres --noGit --noInstall < nul\")",
+      "Bash(pnpm approve-builds *)",
+      "Bash(pnpm install *)"
+    ],
+    "additionalDirectories": [
+      "d:\\d\\Projects\\Website Projects\\tractor"
+    ]
+  }
+}
