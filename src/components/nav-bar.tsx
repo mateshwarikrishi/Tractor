@@ -27,7 +27,7 @@ export function NavBar() {
   return (
     <>
       {/* Sidebar — desktop only */}
-      <aside className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 border-r bg-background z-30">
+      <aside className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 border-r bg-background z-30 print:hidden">
         <div className="flex h-16 items-center px-6 border-b">
           <span className="text-lg font-bold tracking-tight">Tractor</span>
         </div>
@@ -60,7 +60,7 @@ export function NavBar() {
       </aside>
 
       {/* Bottom nav — mobile only */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t bg-background">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t bg-background print:hidden">
         <div className="flex h-16 items-stretch">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link

@@ -15,6 +15,35 @@ export const customerRouter = createTRPCRouter({
       })
     ),
 
+  getActivity: privateProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const [customer, orders, payments] = await Promise.all([
+        ctx.db.customers.findUnique({ where: { id: input.id } }),
+        ctx.db.orders.findMany({
+          where: { customerId: input.id },
+          orderBy: { createdAt: "desc" },
+        }),
+        ctx.db.payments.findMany({
+          where: { customerId: input.id },
+          orderBy: { createdAt: "desc" },
+        }),
+      ]);
+      return {
+        customer,
+        orders: orders.map((o) => ({
+          ...o,
+          amount: Number(o.amount),
+          rate: Number(o.rate),
+          discount: Number(o.discount),
+        })),
+        payments: payments.map((p) => ({
+          ...p,
+          amountPaid: Number(p.amountPaid),
+        })),
+      };
+    }),
+
   create: privateProcedure
     .input(
       z.object({

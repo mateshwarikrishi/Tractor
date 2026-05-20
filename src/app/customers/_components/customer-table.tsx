@@ -1,13 +1,19 @@
 "use client";
 
 import { api } from "@/trpc/react";
+import type { RouterOutputs } from "@/trpc/react";
+
+type Customer = RouterOutputs["customer"]["getAll"][number];
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 
 export function CustomerTable() {
+  const router = useRouter();
   const utils = api.useUtils();
   const { data: customers = [] } = api.customer.getAll.useQuery();
 
@@ -34,10 +40,11 @@ export function CustomerTable() {
             <TableHead>Phone</TableHead>
             <TableHead className="hidden md:table-cell">GST</TableHead>
             <TableHead className="w-10" />
+            <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {customers.map((c) => (
+          {customers.map((c: Customer) => (
             <TableRow key={c.id}>
               <TableCell className="font-medium">{c.name}</TableCell>
               <TableCell className="hidden sm:table-cell text-muted-foreground">
@@ -46,6 +53,16 @@ export function CustomerTable() {
               <TableCell>{c.phoneNumber}</TableCell>
               <TableCell className="hidden md:table-cell text-muted-foreground">
                 {c.gst ?? "—"}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => router.push(`/customers/${c.id}`)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
               </TableCell>
               <TableCell>
                 <Button

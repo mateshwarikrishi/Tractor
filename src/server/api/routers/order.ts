@@ -3,12 +3,18 @@ import { createTRPCRouter, privateProcedure } from "@/server/api/trpc";
 import { OrderType } from "@prisma/client";
 
 export const orderRouter = createTRPCRouter({
-  getAll: privateProcedure.query(({ ctx }) =>
-    ctx.db.orders.findMany({
+  getAll: privateProcedure.query(async ({ ctx }) => {
+    const orders = await ctx.db.orders.findMany({
       orderBy: { createdAt: "desc" },
       include: { customer: true },
-    })
-  ),
+    });
+    return orders.map((o) => ({
+      ...o,
+      amount: Number(o.amount),
+      rate: Number(o.rate),
+      discount: Number(o.discount),
+    }));
+  }),
 
   getById: privateProcedure
     .input(z.object({ id: z.number() }))

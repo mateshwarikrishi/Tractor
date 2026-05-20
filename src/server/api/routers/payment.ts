@@ -2,15 +2,16 @@ import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "@/server/api/trpc";
 
 export const paymentRouter = createTRPCRouter({
-  getAll: privateProcedure.query(({ ctx }) =>
-    ctx.db.payments.findMany({
+  getAll: privateProcedure.query(async ({ ctx }) => {
+    const payments = await ctx.db.payments.findMany({
       orderBy: { createdAt: "desc" },
-      include: {
-        customer: true,
-        order: true,
-      },
-    })
-  ),
+      include: { customer: true, order: true },
+    });
+    return payments.map((p) => ({
+      ...p,
+      amountPaid: Number(p.amountPaid),
+    }));
+  }),
 
   getByOrder: privateProcedure
     .input(z.object({ orderId: z.number() }))
