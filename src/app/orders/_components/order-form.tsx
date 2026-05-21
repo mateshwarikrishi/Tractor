@@ -29,7 +29,7 @@ type FormData = z.infer<typeof schema>;
 export function OrderForm() {
   const [open, setOpen] = useState(false);
   const utils = api.useUtils();
-  const { data: customers = [] } = api.customer.getAll.useQuery();
+  const { data: customers } = api.customer.getAll.useQuery();
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -63,7 +63,7 @@ export function OrderForm() {
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c) => (
+                {(customers ?? []).map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
