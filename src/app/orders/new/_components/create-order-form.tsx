@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { OrderType } from "@prisma/client";
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +19,13 @@ import Link from "next/link";
 import { ArrowLeft, Clock, MapPin, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const OrderType = { TRIP: "TRIP", HOURLY: "HOURLY" } as const;
+type OrderType = (typeof OrderType)[keyof typeof OrderType];
+
 const schema = z.object({
   customerId: z.coerce.number().min(1, "Select a customer"),
   rate: z.coerce.number().positive("Rate must be greater than 0"),
-  type: z.nativeEnum(OrderType),
+  type: z.enum(["TRIP", "HOURLY"]),
   value: z.coerce.number().positive("Must be greater than 0"),
   discount: z.coerce.number().min(0),
 });

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { OrderType } from "@prisma/client";
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Plus } from "lucide-react";
 
+const OrderType = { TRIP: "TRIP", HOURLY: "HOURLY" } as const;
+type OrderType = (typeof OrderType)[keyof typeof OrderType];
+
 const schema = z.object({
   customerId: z.coerce.number().min(1, "Customer is required"),
   amount: z.string().min(1, "Amount is required"),
   rate: z.string().min(1, "Rate is required"),
   discount: z.string(),
-  type: z.nativeEnum(OrderType),
+  type: z.enum(["TRIP", "HOURLY"]),
   value: z.coerce.number().min(0, "Value must be >= 0"),
 });
 
