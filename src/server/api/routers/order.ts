@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "@/server/api/trpc";
-import { OrderType } from "@prisma/client";
+import { OrderType, Prisma } from "@prisma/client";
+
+type OrderWithCustomer = Prisma.OrdersGetPayload<{ include: { customer: true } }>;
 
 export const orderRouter = createTRPCRouter({
   getAll: privateProcedure.query(async ({ ctx }) => {
@@ -8,7 +10,7 @@ export const orderRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
       include: { customer: true },
     });
-    return orders.map((o) => ({
+    return orders.map((o: OrderWithCustomer) => ({
       ...o,
       amount: Number(o.amount),
       rate: Number(o.rate),

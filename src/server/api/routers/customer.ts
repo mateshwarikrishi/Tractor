@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "@/server/api/trpc";
+import type { Orders, Payments } from "@prisma/client";
 
 export const customerRouter = createTRPCRouter({
   getAll: privateProcedure.query(({ ctx }) =>
@@ -31,13 +32,13 @@ export const customerRouter = createTRPCRouter({
       ]);
       return {
         customer,
-        orders: orders.map((o) => ({
+        orders: orders.map((o: Orders) => ({
           ...o,
           amount: Number(o.amount),
           rate: Number(o.rate),
           discount: Number(o.discount),
         })),
-        payments: payments.map((p) => ({
+        payments: payments.map((p: Payments) => ({
           ...p,
           amountPaid: Number(p.amountPaid),
         })),

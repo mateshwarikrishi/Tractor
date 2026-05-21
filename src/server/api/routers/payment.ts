@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "@/server/api/trpc";
+import { Prisma } from "@prisma/client";
+
+type PaymentWithRelations = Prisma.PaymentsGetPayload<{ include: { customer: true; order: true } }>;
 
 export const paymentRouter = createTRPCRouter({
   getAll: privateProcedure.query(async ({ ctx }) => {
@@ -7,7 +10,7 @@ export const paymentRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
       include: { customer: true, order: true },
     });
-    return payments.map((p) => ({
+    return payments.map((p: PaymentWithRelations) => ({
       ...p,
       amountPaid: Number(p.amountPaid),
     }));
