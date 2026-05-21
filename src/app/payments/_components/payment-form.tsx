@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { api, RouterOutputs } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 type Customer = RouterOutputs["customer"]["getAll"][number];
+type Order = RouterOutputs["order"]["getAll"][number];
 
 
 export function PaymentForm() {
@@ -27,8 +28,8 @@ export function PaymentForm() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const utils = api.useUtils();
 
-  const { data: customers = [] } = api.customer.getAll.useQuery();
-  const { data: allOrders = [] } = api.order.getAll.useQuery();
+  const customers: Customer[] = api.customer.getAll.useQuery().data ?? [];
+  const allOrders: Order[] = api.order.getAll.useQuery().data ?? [];
 
   const customerOrders = selectedCustomerId
     ? allOrders.filter((o) => o.customerId === selectedCustomerId)
@@ -94,7 +95,7 @@ export function PaymentForm() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">No specific order</SelectItem>
-                {customerOrders.map((o) => (
+                {customerOrders.map((o: Order) => (
                   <SelectItem key={o.id} value={String(o.id)}>
                     #{o.id} — ₹{Number(o.amount).toFixed(2)} ({o.type})
                   </SelectItem>

@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 export function CustomerTable() {
   const router = useRouter();
   const utils = api.useUtils();
-  const { data: customers = [] } = api.customer.getAll.useQuery();
+  const customers: Customer[] = api.customer.getAll.useQuery().data ?? [];
 
   const remove = api.customer.delete.useMutation({
     onSuccess: () => utils.customer.getAll.invalidate(),

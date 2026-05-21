@@ -1,6 +1,8 @@
 "use client";
 
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
+
+type User = RouterOutputs["user"]["getAll"][number];
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -10,7 +12,7 @@ import { Trash2 } from "lucide-react";
 
 export function UserTable() {
   const utils = api.useUtils();
-  const { data: users = [] } = api.user.getAll.useQuery();
+  const users: User[] = api.user.getAll.useQuery().data ?? [];
 
   const remove = api.user.delete.useMutation({
     onSuccess: () => utils.user.getAll.invalidate(),
@@ -37,7 +39,7 @@ export function UserTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((u) => (
+          {users.map((u: User) => (
             <TableRow key={u.id}>
               <TableCell className="font-medium">{u.name}</TableCell>
               <TableCell className="text-muted-foreground">{u.email}</TableCell>
