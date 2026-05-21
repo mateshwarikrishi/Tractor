@@ -66,7 +66,7 @@ export function OrderForm() {
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c) => (
+                {customers.map((c: Customer) => (
                   <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
