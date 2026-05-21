@@ -15,10 +15,12 @@ import {
 import { Trash2 } from "lucide-react";
 
 type Order = RouterOutputs["order"]["getAll"][number];
+type CustomerOption = Pick<RouterOutputs["customer"]["getAll"][number], "id" | "name">;
+
 
 export function OrderTable() {
   const utils = api.useUtils();
-  const { data: orders = [] } = api.order.getAll.useQuery();
+  const orders: Order[] = api.order.getAll.useQuery().data ?? [];
 
   const [customerFilter, setCustomerFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
@@ -63,7 +65,7 @@ export function OrderTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All customers</SelectItem>
-            {customers.map((c) => (
+            {customers.map((c: CustomerOption) => (
               <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
             ))}
           </SelectContent>

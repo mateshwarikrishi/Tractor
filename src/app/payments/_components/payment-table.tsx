@@ -14,10 +14,12 @@ import {
 import { Trash2 } from "lucide-react";
 
 type Payment = RouterOutputs["payment"]["getAll"][number];
+type CustomerOption = Pick<RouterOutputs["customer"]["getAll"][number], "id" | "name">;
+
 
 export function PaymentTable() {
   const utils = api.useUtils();
-  const { data: payments = [] } = api.payment.getAll.useQuery();
+  const payments: Payment[] = api.payment.getAll.useQuery().data ?? [];
 
   const [customerFilter, setCustomerFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
@@ -27,7 +29,7 @@ export function PaymentTable() {
     onSuccess: () => utils.payment.getAll.invalidate(),
   });
 
-  const customers = useMemo(() => {
+  const customers: CustomerOption[] = useMemo(() => {
     const map = new Map<number, string>();
     payments.forEach((p: Payment) => map.set(p.customer.id, p.customer.name));
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
@@ -62,7 +64,7 @@ export function PaymentTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All customers</SelectItem>
-            {customers.map((c) => (
+            {customers.map((c: CustomerOption) => (
               <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
             ))}
           </SelectContent>

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 
 const OrderType = { TRIP: "TRIP", HOURLY: "HOURLY" } as const;
 type OrderType = (typeof OrderType)[keyof typeof OrderType];
+type Customer = RouterOutputs["customer"]["getAll"][number];
+
 
 const schema = z.object({
   customerId: z.coerce.number().min(1, "Select a customer"),
@@ -35,7 +37,7 @@ type FormData = z.infer<typeof schema>;
 export function CreateOrderForm() {
   const router = useRouter();
   const utils = api.useUtils();
-  const { data: customers = [] } = api.customer.getAll.useQuery();
+  const customers: Customer[] = api.customer.getAll.useQuery().data ?? [];
 
   const {
     register,
@@ -112,7 +114,7 @@ export function CreateOrderForm() {
                 <SelectValue placeholder="Select a customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c) => (
+                {customers.map((c:Customer) => (
                   <SelectItem key={c.id} value={String(c.id)}>
                     {c.name}
                   </SelectItem>

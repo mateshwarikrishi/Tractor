@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { api } from "@/trpc/react";
+import { api, RouterOutputs } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,8 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+type Customer = RouterOutputs["customer"]["getAll"][number];
+
 
 export function PaymentForm() {
   const [open, setOpen] = useState(false);
@@ -71,7 +73,7 @@ export function PaymentForm() {
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c) => (
+                {customers.map((c: Customer) => (
                   <SelectItem key={c.id} value={String(c.id)}>
                     {c.name}
                   </SelectItem>
