@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { api, type RouterOutputs } from "@/trpc/react";
+import { api } from "@/trpc/react";
 
-type Customer = RouterOutputs["customer"]["getAll"][number];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +30,7 @@ type FormData = z.infer<typeof schema>;
 export function OrderForm() {
   const [open, setOpen] = useState(false);
   const utils = api.useUtils();
-  const { data: customers } = api.customer.getAll.useQuery() as { data: Customer[] | undefined };
+  const { data: customers = [] } = api.customer.getAll.useQuery();
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -65,7 +64,7 @@ export function OrderForm() {
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
               <SelectContent>
-                {(customers ?? []).map((c) => (
+                {customers.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
