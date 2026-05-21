@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserRole } from "@prisma/client";
 import { api } from "@/trpc/react";
 import { signUp } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -14,11 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Plus } from "lucide-react";
 
+const UserRole = { ADMIN: "ADMIN", USER: "USER" } as const;
+type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.nativeEnum(UserRole),
+  role: z.enum(["ADMIN", "USER"]),
 });
 
 type FormData = z.infer<typeof schema>;
