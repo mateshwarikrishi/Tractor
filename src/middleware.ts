@@ -9,8 +9,10 @@ export function middleware(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   if (isPublic) return NextResponse.next();
 
-  // BetterAuth session cookie
-  const session = request.cookies.get("better-auth.session_token");
+  // BetterAuth uses __Secure- prefix on HTTPS (production)
+  const session =
+    request.cookies.get("__Secure-better-auth.session_token") ??
+    request.cookies.get("better-auth.session_token");
   if (!session) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
