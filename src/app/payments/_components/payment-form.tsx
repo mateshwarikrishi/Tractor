@@ -8,6 +8,7 @@ import { api, type RouterOutputs } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Plus } from "lucide-react";
@@ -16,6 +17,7 @@ const schema = z.object({
   customerId: z.coerce.number().min(1, "Customer is required"),
   orderId: z.coerce.number().optional(),
   amountPaid: z.string().min(1, "Amount is required"),
+  notes: z.string().optional(),
   paymentDate: z.string().optional(),
 });
 
@@ -60,7 +62,16 @@ export function PaymentForm() {
         <SheetHeader>
           <SheetTitle>New Payment</SheetTitle>
         </SheetHeader>
-        <form onSubmit={handleSubmit((d) => create.mutate(d))} className="mt-6 space-y-4">
+        <form
+          onSubmit={handleSubmit((d) =>
+            create.mutate({
+              ...d,
+              notes: d.notes ?? undefined,
+              paymentDate: d.paymentDate ?? undefined,
+            })
+          )}
+          className="mt-6 space-y-4"
+        >
           <div className="space-y-1.5">
             <Label>Customer *</Label>
             <Select
@@ -116,6 +127,19 @@ export function PaymentForm() {
               Date <span className="text-muted-foreground text-xs">(optional, defaults to today)</span>
             </Label>
             <Input id="paymentDate" type="date" {...register("paymentDate")} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="notes">
+              Notes <span className="text-muted-foreground text-xs">(optional)</span>
+            </Label>
+            <Textarea
+              id="notes"
+              placeholder="Any additional details…"
+              className="resize-none"
+              rows={3}
+              {...register("notes")}
+            />
           </div>
 
           <Button type="submit" disabled={create.isPending} className="w-full mt-2">

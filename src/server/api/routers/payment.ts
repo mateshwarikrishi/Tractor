@@ -42,6 +42,7 @@ export const paymentRouter = createTRPCRouter({
         customerId: z.number(),
         orderId: z.number().optional(),
         amountPaid: z.string(),
+        notes: z.string().optional(),
         paymentDate: z.string().optional(),
       })
     )

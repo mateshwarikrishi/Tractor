@@ -57,6 +57,7 @@ export const orderRouter = createTRPCRouter({
         discount: z.string().default("0"),
         type: z.nativeEnum(OrderType),
         value: z.number(),
+        notes: z.string().optional(),
         orderDate: z.string().optional(),
       })
     )
@@ -80,6 +81,7 @@ export const orderRouter = createTRPCRouter({
         discount: z.string().optional(),
         type: z.nativeEnum(OrderType).optional(),
         value: z.number().optional(),
+        notes: z.string().optional(),
       })
     )
     .mutation(({ ctx, input }) => {

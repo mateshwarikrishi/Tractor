@@ -14,6 +14,15 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft } from "lucide-react";
 
+function formatDuration(decimalHours: number): string {
+  const totalMinutes = Math.round(decimalHours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 export function OrderDetail({ orderId }: { orderId: number }) {
   const router = useRouter();
   const { data: order } = api.order.getById.useQuery({ id: orderId });
@@ -46,15 +55,21 @@ export function OrderDetail({ orderId }: { orderId: number }) {
         </Badge>
       </div>
 
-      <div className="rounded-lg border p-4 space-y-2 text-sm">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="rounded-lg border p-4 space-y-3 text-sm">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div>
             <p className="text-xs text-muted-foreground">Date</p>
             <p className="font-medium">{fmtDate(order.createdAt)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">{order.type === "TRIP" ? "Units" : "Hours"}</p>
-            <p className="font-medium">{order.value}</p>
+            <p className="text-xs text-muted-foreground">
+              {order.type === "TRIP" ? "Trips" : "Duration"}
+            </p>
+            <p className="font-medium">
+              {order.type === "TRIP"
+                ? order.value
+                : formatDuration(order.value)}
+            </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Rate</p>
@@ -65,6 +80,12 @@ export function OrderDetail({ orderId }: { orderId: number }) {
             <p className="font-medium">{fmt(order.discount)}</p>
           </div>
         </div>
+        {order.notes && (
+          <div className="border-t pt-3">
+            <p className="text-xs text-muted-foreground mb-1">Notes</p>
+            <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-2">
@@ -92,12 +113,13 @@ export function OrderDetail({ orderId }: { orderId: number }) {
               <TableRow>
                 <TableHead className="whitespace-nowrap">Date</TableHead>
                 <TableHead className="text-right whitespace-nowrap">Amount Paid</TableHead>
+                <TableHead className="whitespace-nowrap">Notes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {order.payments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={2} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={3} className="py-10 text-center text-sm text-muted-foreground">
                     No payments recorded
                   </TableCell>
                 </TableRow>
@@ -109,6 +131,9 @@ export function OrderDetail({ orderId }: { orderId: number }) {
                     </TableCell>
                     <TableCell className="text-right text-xs sm:text-sm font-medium text-green-600 whitespace-nowrap">
                       {fmt(p.amountPaid)}
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm text-muted-foreground max-w-[160px] truncate">
+                      {p.notes ?? "—"}
                     </TableCell>
                   </TableRow>
                 ))

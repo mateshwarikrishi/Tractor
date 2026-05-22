@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +9,7 @@ import { api, type RouterOutputs } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -23,13 +25,17 @@ const OrderType = { TRIP: "TRIP", HOURLY: "HOURLY" } as const;
 type OrderType = (typeof OrderType)[keyof typeof OrderType];
 type Customer = RouterOutputs["customer"]["getAll"][number];
 
-
 const schema = z.object({
   customerId: z.coerce.number().min(1, "Select a customer"),
   rate: z.coerce.number().positive("Rate must be greater than 0"),
   type: z.enum(["TRIP", "HOURLY"]),
-  value: z.coerce.number().positive("Must be greater than 0"),
+  // TRIP: direct trip count; HOURLY: computed from hours + minutes
+  value: z.coerce.number().min(0),
+  hours: z.coerce.number().min(0).optional(),
+  minutes: z.coerce.number().min(0).max(59).optional(),
   discount: z.coerce.number().min(0),
+  notes: z.string().optional(),
+  orderDate: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -47,14 +53,26 @@ export function CreateOrderForm() {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { type: OrderType.TRIP, discount: 0 },
+    defaultValues: { type: OrderType.TRIP, discount: 0, hours: 0, minutes: 0 },
   });
 
   const watchRate = Number(watch("rate")) || 0;
   const watchValue = Number(watch("value")) || 0;
   const watchDiscount = Number(watch("discount")) || 0;
   const watchType = watch("type");
-  const subtotal = watchRate * watchValue;
+  const watchHours = Number(watch("hours")) || 0;
+  const watchMinutes = Number(watch("minutes")) || 0;
+
+  // For HOURLY, keep value in sync with hours + minutes
+  useEffect(() => {
+    if (watchType === OrderType.HOURLY) {
+      const decimal = watchHours + watchMinutes / 60;
+      setValue("value", decimal, { shouldValidate: true });
+    }
+  }, [watchType, watchHours, watchMinutes, setValue]);
+
+  const displayValue = watchType === OrderType.HOURLY ? watchHours + watchMinutes / 60 : watchValue;
+  const subtotal = watchRate * displayValue;
   const total = Math.max(0, subtotal - watchDiscount);
 
   const create = api.order.create.useMutation({
@@ -65,16 +83,30 @@ export function CreateOrderForm() {
   });
 
   function onSubmit(data: FormData) {
-    const amount = Math.max(0, data.rate * data.value - data.discount);
+    const finalValue =
+      data.type === OrderType.HOURLY
+        ? (data.hours ?? 0) + (data.minutes ?? 0) / 60
+        : data.value;
+    const amount = Math.max(0, data.rate * finalValue - data.discount);
     create.mutate({
       customerId: data.customerId,
       rate: String(data.rate),
       type: data.type,
-      value: data.value,
+      value: finalValue,
       discount: String(data.discount),
       amount: String(amount),
+      notes: data.notes ?? undefined,
+      orderDate: data.orderDate ?? undefined,
     });
   }
+
+  const formatHoursDisplay = (h: number, m: number) => {
+    if (h === 0 && m === 0) return "0 hrs";
+    const parts: string[] = [];
+    if (h > 0) parts.push(`${h} hr${h !== 1 ? "s" : ""}`);
+    if (m > 0) parts.push(`${m} min${m !== 1 ? "s" : ""}`);
+    return parts.join(" ");
+  };
 
   return (
     <div>
@@ -114,7 +146,7 @@ export function CreateOrderForm() {
                 <SelectValue placeholder="Select a customer" />
               </SelectTrigger>
               <SelectContent>
-                {customers.map((c:Customer) => (
+                {customers.map((c: Customer) => (
                   <SelectItem key={c.id} value={String(c.id)}>
                     {c.name}
                   </SelectItem>
@@ -185,24 +217,69 @@ export function CreateOrderForm() {
             </div>
           </div>
 
-          {/* Value (trips or hours) */}
-          <div className="space-y-2">
-            <Label htmlFor="value">
-              {watchType === OrderType.HOURLY ? "Hours *" : "Trips *"}
-            </Label>
-            <Input
-              id="value"
-              type="number"
-              step="0.01"
-              min="0"
-              className="h-12"
-              placeholder={watchType === OrderType.HOURLY ? "e.g. 8" : "e.g. 3"}
-              {...register("value")}
-            />
-            {errors.value && (
-              <p className="text-xs text-destructive">{errors.value.message}</p>
-            )}
-          </div>
+          {/* Value — trips (TRIP) or hours+minutes (HOURLY) */}
+          {watchType === OrderType.TRIP ? (
+            <div className="space-y-2">
+              <Label htmlFor="value">Trips *</Label>
+              <Input
+                id="value"
+                type="number"
+                step="1"
+                min="0"
+                className="h-12"
+                placeholder="e.g. 3"
+                {...register("value")}
+              />
+              {errors.value && (
+                <p className="text-xs text-destructive">{errors.value.message}</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Duration *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="hours" className="text-xs text-muted-foreground">Hours</Label>
+                  <Input
+                    id="hours"
+                    type="number"
+                    step="1"
+                    min="0"
+                    className="h-12"
+                    placeholder="0"
+                    {...register("hours")}
+                  />
+                  {errors.hours && (
+                    <p className="text-xs text-destructive">{errors.hours.message}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="minutes" className="text-xs text-muted-foreground">Minutes</Label>
+                  <Input
+                    id="minutes"
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="59"
+                    className="h-12"
+                    placeholder="0"
+                    {...register("minutes")}
+                  />
+                  {errors.minutes && (
+                    <p className="text-xs text-destructive">{errors.minutes.message}</p>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {formatHoursDisplay(watchHours, watchMinutes)}{" "}
+                {(watchHours > 0 || watchMinutes > 0) && (
+                  <span className="tabular-nums">
+                    = {(watchHours + watchMinutes / 60).toFixed(4).replace(/\.?0+$/, "")} hrs
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
 
           {/* Discount */}
           <div className="space-y-2">
@@ -224,6 +301,28 @@ export function CreateOrderForm() {
             <p className="text-xs text-muted-foreground">Fixed amount discount</p>
           </div>
 
+          {/* Order Date */}
+          <div className="space-y-2">
+            <Label htmlFor="orderDate">
+              Date <span className="text-muted-foreground text-xs">(optional, defaults to today)</span>
+            </Label>
+            <Input id="orderDate" type="date" className="h-12" {...register("orderDate")} />
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">
+              Notes <span className="text-muted-foreground text-xs">(optional)</span>
+            </Label>
+            <Textarea
+              id="notes"
+              placeholder="Any additional details…"
+              className="resize-none"
+              rows={3}
+              {...register("notes")}
+            />
+          </div>
+
           {/* Live summary */}
           <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold">
@@ -234,8 +333,9 @@ export function CreateOrderForm() {
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>
                   ₹{watchRate.toFixed(2)} &times;{" "}
-                  {watchValue}{" "}
-                  {watchType === OrderType.HOURLY ? "hrs" : "trips"}
+                  {watchType === OrderType.HOURLY
+                    ? formatHoursDisplay(watchHours, watchMinutes)
+                    : `${watchValue} trips`}
                 </span>
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>

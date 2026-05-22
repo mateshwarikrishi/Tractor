@@ -102,6 +102,7 @@ model Orders {
   discount   Decimal    @db.Decimal(10, 2) @default(0)
   type       OrderType
   value      Float
+  notes      String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   payments   Payments[]
@@ -116,6 +117,7 @@ model Payments {
   orderId    Int?
   order      Orders?   @relation(fields: [orderId], references: [id])
   amountPaid Decimal   @db.Decimal(10, 2)
+  notes      String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
