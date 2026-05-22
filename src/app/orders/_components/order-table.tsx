@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type Order = RouterOutputs["order"]["getAll"][number];
 type CustomerOption = Pick<RouterOutputs["customer"]["getAll"][number], "id" | "name">;
@@ -25,6 +26,8 @@ export function OrderTable() {
   const [customerFilter, setCustomerFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  const router = useRouter();
 
   const remove = api.order.delete.useMutation({
     onSuccess: () => utils.order.getAll.invalidate(),
@@ -103,7 +106,7 @@ export function OrderTable() {
                 <TableHead className="hidden sm:table-cell">Rate</TableHead>
                 <TableHead className="hidden md:table-cell">Discount</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead className="w-10" />
+                <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,15 +126,25 @@ export function OrderTable() {
                   <TableCell className="hidden md:table-cell">₹{o.discount.toFixed(2)}</TableCell>
                   <TableCell className="font-medium">₹{o.amount.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => remove.mutate({ id: o.id })}
-                      disabled={remove.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => router.push(`/orders/${o.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => remove.mutate({ id: o.id })}
+                        disabled={remove.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

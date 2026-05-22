@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type Payment = RouterOutputs["payment"]["getAll"][number];
 type CustomerOption = Pick<RouterOutputs["customer"]["getAll"][number], "id" | "name">;
@@ -24,10 +25,13 @@ export function PaymentTable() {
   const [customerFilter, setCustomerFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const remove = api.payment.delete.useMutation({
     onSuccess: () => utils.payment.getAll.invalidate(),
   });
+
+  const selectedPayment = payments.find((p) => p.id === selectedId) ?? null;
 
   const customers: CustomerOption[] = useMemo(() => {
     const map = new Map<number, string>();
@@ -99,7 +103,7 @@ export function PaymentTable() {
                 <TableHead>Customer</TableHead>
                 <TableHead className="hidden sm:table-cell">Order #</TableHead>
                 <TableHead>Amount Paid</TableHead>
-                <TableHead className="w-10" />
+                <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -114,15 +118,25 @@ export function PaymentTable() {
                   </TableCell>
                   <TableCell className="font-medium">₹{p.amountPaid.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => remove.mutate({ id: p.id })}
-                      disabled={remove.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => setSelectedId(p.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => remove.mutate({ id: p.id })}
+                        disabled={remove.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -130,6 +144,32 @@ export function PaymentTable() {
           </Table>
         </div>
       )}
+
+      <Sheet open={selectedId !== null} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Payment #{selectedPayment?.id}</SheetTitle>
+          </SheetHeader>
+          {selectedPayment && (
+            <div className="mt-6 divide-y rounded-lg border">
+              <DetailRow label="Customer" value={selectedPayment.customer.name} />
+              <DetailRow label="Order" value={selectedPayment.orderId ? `#${selectedPayment.orderId}` : "—"} />
+              <DetailRow label="Amount Paid" value={`₹${selectedPayment.amountPaid.toFixed(2)}`} />
+              <DetailRow label="Date" value={new Date(selectedPayment.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} />
+              <DetailRow label="Notes" value={selectedPayment.notes ?? "—"} />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between py-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-right">{value}</span>
     </div>
   );
 }
