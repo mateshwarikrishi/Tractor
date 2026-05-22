@@ -42,11 +42,18 @@ export const paymentRouter = createTRPCRouter({
         customerId: z.number(),
         orderId: z.number().optional(),
         amountPaid: z.string(),
+        paymentDate: z.string().optional(),
       })
     )
-    .mutation(({ ctx, input }) =>
-      ctx.db.payments.create({ data: input })
-    ),
+    .mutation(({ ctx, input }) => {
+      const { paymentDate, ...rest } = input;
+      return ctx.db.payments.create({
+        data: {
+          ...rest,
+          ...(paymentDate ? { createdAt: new Date(paymentDate) } : {}),
+        },
+      });
+    }),
 
   delete: privateProcedure
     .input(z.object({ id: z.number() }))

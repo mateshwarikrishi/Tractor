@@ -25,6 +25,7 @@ const schema = z.object({
   discount: z.string(),
   type: z.enum(["TRIP", "HOURLY"]),
   value: z.coerce.number().min(0, "Value must be >= 0"),
+  orderDate: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -107,6 +108,12 @@ export function OrderForm() {
               <Label htmlFor="discount">Discount</Label>
               <Input id="discount" type="number" step="0.01" {...register("discount")} placeholder="0.00" />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="orderDate">
+              Date <span className="text-muted-foreground text-xs">(optional, defaults to today)</span>
+            </Label>
+            <Input id="orderDate" type="date" {...register("orderDate")} />
           </div>
           <Button type="submit" disabled={create.isPending} className="w-full mt-2">
             {create.isPending ? "Saving…" : "Create Order"}

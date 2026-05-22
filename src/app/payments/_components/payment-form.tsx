@@ -16,6 +16,7 @@ const schema = z.object({
   customerId: z.coerce.number().min(1, "Customer is required"),
   orderId: z.coerce.number().optional(),
   amountPaid: z.string().min(1, "Amount is required"),
+  paymentDate: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -108,6 +109,13 @@ export function PaymentForm() {
             <Label htmlFor="amountPaid">Amount Paid *</Label>
             <Input id="amountPaid" type="number" step="0.01" {...register("amountPaid")} placeholder="0.00" />
             {errors.amountPaid && <p className="text-xs text-destructive">{errors.amountPaid.message}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="paymentDate">
+              Date <span className="text-muted-foreground text-xs">(optional, defaults to today)</span>
+            </Label>
+            <Input id="paymentDate" type="date" {...register("paymentDate")} />
           </div>
 
           <Button type="submit" disabled={create.isPending} className="w-full mt-2">

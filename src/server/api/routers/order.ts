@@ -20,12 +20,23 @@ export const orderRouter = createTRPCRouter({
 
   getById: privateProcedure
     .input(z.object({ id: z.number() }))
-    .query(({ ctx, input }) =>
-      ctx.db.orders.findUnique({
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.db.orders.findUnique({
         where: { id: input.id },
         include: { customer: true, payments: { orderBy: { createdAt: "desc" } } },
-      })
-    ),
+      });
+      if (!order) return null;
+      return {
+        ...order,
+        amount: Number(order.amount),
+        rate: Number(order.rate),
+        discount: Number(order.discount),
+        payments: order.payments.map((p) => ({
+          ...p,
+          amountPaid: Number(p.amountPaid),
+        })),
+      };
+    }),
 
   getByCustomer: privateProcedure
     .input(z.object({ customerId: z.number() }))
@@ -46,11 +57,18 @@ export const orderRouter = createTRPCRouter({
         discount: z.string().default("0"),
         type: z.nativeEnum(OrderType),
         value: z.number(),
+        orderDate: z.string().optional(),
       })
     )
-    .mutation(({ ctx, input }) =>
-      ctx.db.orders.create({ data: input })
-    ),
+    .mutation(({ ctx, input }) => {
+      const { orderDate, ...rest } = input;
+      return ctx.db.orders.create({
+        data: {
+          ...rest,
+          ...(orderDate ? { createdAt: new Date(orderDate) } : {}),
+        },
+      });
+    }),
 
   update: privateProcedure
     .input(

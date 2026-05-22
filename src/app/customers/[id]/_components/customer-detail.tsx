@@ -15,7 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Printer } from "lucide-react";
+import Link from "next/link";
 
 type Activity = RouterOutputs["customer"]["getActivity"];
 type Orders = Activity["orders"][number];
@@ -160,20 +161,21 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
         ))}
       </div>
 
-      <div className="rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead className="whitespace-nowrap">Date</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead className="hidden sm:table-cell">Description</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
+              <TableHead className="w-10 print:hidden" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
                   No activity found
                 </TableCell>
               </TableRow>
@@ -188,11 +190,20 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
                       {item.badge}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                  <TableCell className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">
                     {item.label}
                   </TableCell>
-                  <TableCell className={`text-right text-xs sm:text-sm font-medium ${item.kind === "payment" ? "text-green-600" : ""}`}>
+                  <TableCell className={`text-right text-xs sm:text-sm font-medium whitespace-nowrap ${item.kind === "payment" ? "text-green-600" : ""}`}>
                     {fmt(item.amount)}
+                  </TableCell>
+                  <TableCell className="print:hidden">
+                    {item.kind === "order" && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" asChild>
+                        <Link href={`/orders/${item.id}`}>
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
