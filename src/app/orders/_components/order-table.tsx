@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { OrderEditForm } from "./order-edit-form";
 
 type Order = RouterOutputs["order"]["getAll"][number];
 type CustomerOption = Pick<RouterOutputs["customer"]["getAll"][number], "id" | "name">;
@@ -26,6 +27,7 @@ export function OrderTable() {
   const [customerFilter, setCustomerFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
   const router = useRouter();
 
@@ -106,7 +108,7 @@ export function OrderTable() {
                 <TableHead className="hidden sm:table-cell">Rate</TableHead>
                 <TableHead className="hidden md:table-cell">Discount</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead className="w-20" />
+                <TableHead className="w-28" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,6 +140,14 @@ export function OrderTable() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => setEditingOrder(o)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => remove.mutate({ id: o.id })}
                         disabled={remove.isPending}
@@ -151,6 +161,14 @@ export function OrderTable() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {editingOrder && (
+        <OrderEditForm
+          order={editingOrder}
+          open={!!editingOrder}
+          onOpenChange={(open) => { if (!open) setEditingOrder(null); }}
+        />
       )}
     </div>
   );

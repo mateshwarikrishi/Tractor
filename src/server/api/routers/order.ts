@@ -82,11 +82,18 @@ export const orderRouter = createTRPCRouter({
         type: z.nativeEnum(OrderType).optional(),
         value: z.number().optional(),
         notes: z.string().optional(),
+        orderDate: z.string().optional(),
       })
     )
     .mutation(({ ctx, input }) => {
-      const { id, ...data } = input;
-      return ctx.db.orders.update({ where: { id }, data });
+      const { id, orderDate, ...data } = input;
+      return ctx.db.orders.update({
+        where: { id },
+        data: {
+          ...data,
+          ...(orderDate ? { createdAt: new Date(orderDate) } : {}),
+        },
+      });
     }),
 
   delete: privateProcedure
