@@ -19,7 +19,7 @@ import { Plus } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
-  phoneNumber: z.string().min(1, "Phone is required"),
+  phoneNumber: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   gst: z.string().optional(),
 });
@@ -64,7 +64,7 @@ export function CustomerForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phoneNumber">Phone *</Label>
-            <Input id="phoneNumber" {...register("phoneNumber")} placeholder="+91 98765 43210" />
+            <Input id="phoneNumber" type="tel" maxLength={10} inputMode="numeric" {...register("phoneNumber")} placeholder="9876543210" />
             {errors.phoneNumber && <p className="text-xs text-destructive">{errors.phoneNumber.message}</p>}
           </div>
           <div className="space-y-1.5">

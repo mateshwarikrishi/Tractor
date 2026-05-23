@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Printer } from "lucide-react";
 import Link from "next/link";
 
@@ -23,6 +24,23 @@ type Orders = Activity["orders"][number];
 type Payments = Activity["payments"][number];
 
 const PAGE_SIZE = 10;
+
+function fmtHours(decimalHours: number): string {
+  if (decimalHours === 0) return "0H";
+  const h = Math.floor(decimalHours);
+  const m = Math.round((decimalHours - h) * 60);
+  if (m === 0) return `${h}H`;
+  return `${h}H ${m}M`;
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between py-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-right">{value}</span>
+    </div>
+  );
+}
 
 export function CustomerDetail({ customerId }: { customerId: number }) {
   const router = useRouter();
@@ -33,6 +51,7 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
   const [typeFilter, setTypeFilter] = useState<"all" | "order" | "payment">("all");
   const [page, setPage] = useState(1);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
 
   useEffect(() => {
     const before = () => setIsPrinting(true);
@@ -45,8 +64,8 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
     };
   }, []);
 
-  const { items, totalOrders, totalPayments, totalPages } = useMemo(() => {
-    if (!data) return { items: [], totalOrders: 0, totalPayments: 0, totalPages: 0 };
+  const { items, totalOrders, totalPayments, totalHours, totalTrips, totalPages } = useMemo(() => {
+    if (!data) return { items: [], totalOrders: 0, totalPayments: 0, totalHours: 0, totalTrips: 0, totalPages: 0 };
 
     const from = dateFrom ? new Date(dateFrom) : null;
     const to = dateTo ? new Date(dateTo + "T23:59:59") : null;
@@ -62,13 +81,19 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
 
     const totalOrders = filteredOrders.reduce((sum: number, o: Orders) => sum + o.amount, 0);
     const totalPayments = filteredPayments.reduce((sum: number, p: Payments) => sum + p.amountPaid, 0);
+    const totalHours = filteredOrders
+      .filter((o: Orders) => o.type === "HOURLY")
+      .reduce((sum: number, o: Orders) => sum + o.value, 0);
+    const totalTrips = filteredOrders
+      .filter((o: Orders) => o.type === "TRIP")
+      .reduce((sum: number, o: Orders) => sum + o.value, 0);
 
     const merged = [
       ...filteredOrders.map((o: Orders) => ({
         kind: "order" as const,
         date: new Date(o.createdAt),
-        label: o.type === "TRIP" ? `Trip (${o.value} units)` : `Hourly (${o.value} hrs)`,
-        badge: o.type,
+        label: o.type === "TRIP" ? `Trip · ${o.value} units` : `Hourly · ${fmtHours(o.value)}`,
+        badge: o.type === "TRIP" ? "Trip" : "Hourly",
         badgeVariant: (o.type === "TRIP" ? "default" : "secondary") as "default" | "secondary" | "outline",
         amount: o.amount,
         id: o.id,
@@ -88,10 +113,11 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const items = isPrinting ? filtered : filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-    return { items, totalOrders, totalPayments, totalPages };
+    return { items, totalOrders, totalPayments, totalHours, totalTrips, totalPages };
   }, [data, dateFrom, dateTo, typeFilter, page, isPrinting]);
 
   const outstanding = totalOrders - totalPayments;
+  const selectedPayment = data?.payments.find((p) => p.id === selectedPaymentId) ?? null;
 
   if (!data) {
     return <div className="p-6 text-center text-sm text-muted-foreground">Loading...</div>;
@@ -106,10 +132,10 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-lg font-semibold">{data.customer?.name ?? "Customer"}</h1>
+        <h1 className="truncate text-lg font-semibold">{data.customer?.name ?? "Customer"}</h1>
       </div>
 
       <div className="flex flex-wrap items-end gap-2 print:hidden">
@@ -117,34 +143,42 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
           type="date"
           value={dateFrom}
           onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-          className="w-full sm:w-auto"
+          className="min-w-[140px] flex-1"
         />
         <Input
           type="date"
           value={dateTo}
           onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-          className="w-full sm:w-auto"
+          className="min-w-[140px] flex-1"
         />
-        <Button
-          variant="outline"
-          onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}
-        >
-          Clear
-        </Button>
+        {(dateFrom || dateTo) && (
+          <Button variant="outline" onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}>
+            Clear
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-lg border p-3 text-center">
-          <p className="text-muted-foreground text-xs sm:text-sm">Total Orders</p>
-          <p className="font-semibold text-xs sm:text-sm">{fmt(totalOrders)}</p>
+      {/* Outstanding full-width on mobile; 5-col on sm+ */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="col-span-2 rounded-lg border p-3 text-center sm:col-span-1">
+          <p className="text-xs text-muted-foreground">Outstanding</p>
+          <p className="text-sm font-semibold">{fmt(outstanding)}</p>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <p className="text-muted-foreground text-xs sm:text-sm">Total Payments</p>
-          <p className="font-semibold text-xs sm:text-sm">{fmt(totalPayments)}</p>
+          <p className="text-xs text-muted-foreground">Orders</p>
+          <p className="text-sm font-semibold">{fmt(totalOrders)}</p>
         </div>
         <div className="rounded-lg border p-3 text-center">
-          <p className="text-muted-foreground text-xs sm:text-sm">Outstanding</p>
-          <p className="font-semibold text-xs sm:text-sm">{fmt(outstanding)}</p>
+          <p className="text-xs text-muted-foreground">Payments</p>
+          <p className="text-sm font-semibold">{fmt(totalPayments)}</p>
+        </div>
+        <div className="rounded-lg border p-3 text-center">
+          <p className="text-xs text-muted-foreground">Total Hours</p>
+          <p className="text-sm font-semibold">{fmtHours(totalHours)}</p>
+        </div>
+        <div className="rounded-lg border p-3 text-center">
+          <p className="text-xs text-muted-foreground">Total Trips</p>
+          <p className="text-sm font-semibold">{Math.round(totalTrips)}</p>
         </div>
       </div>
 
@@ -153,6 +187,7 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
           <Button
             key={t}
             variant={typeFilter === t ? "default" : "outline"}
+            size="sm"
             className="flex-1"
             onClick={() => { setTypeFilter(t); setPage(1); }}
           >
@@ -167,8 +202,8 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
             <TableRow>
               <TableHead className="whitespace-nowrap">Date</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
+              <TableHead className="hidden sm:table-cell">Description</TableHead>
+              <TableHead className="whitespace-nowrap text-right">Amount</TableHead>
               <TableHead className="w-10 print:hidden" />
             </TableRow>
           </TableHeader>
@@ -182,7 +217,7 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
             ) : (
               items.map((item) => (
                 <TableRow key={`${item.kind}-${item.id}`}>
-                  <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap text-xs sm:text-sm">
                     {fmtDate(item.date)}
                   </TableCell>
                   <TableCell>
@@ -190,18 +225,36 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
                       {item.badge}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">
+                  <TableCell className="hidden text-xs text-muted-foreground sm:table-cell sm:text-sm">
                     {item.label}
                   </TableCell>
-                  <TableCell className={`text-right text-xs sm:text-sm font-medium whitespace-nowrap ${item.kind === "payment" ? "text-green-600" : ""}`}>
+                  <TableCell
+                    className={`whitespace-nowrap text-right text-xs font-medium sm:text-sm ${
+                      item.kind === "payment" ? "text-green-600" : ""
+                    }`}
+                  >
                     {fmt(item.amount)}
                   </TableCell>
                   <TableCell className="print:hidden">
-                    {item.kind === "order" && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" asChild>
+                    {item.kind === "order" ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        asChild
+                      >
                         <Link href={`/orders/${item.id}`}>
                           <ExternalLink className="h-4 w-4" />
                         </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => setSelectedPaymentId(item.id)}
+                      >
+                        <ExternalLink className="h-4 w-4" />
                       </Button>
                     )}
                   </TableCell>
@@ -238,10 +291,37 @@ export function CustomerDetail({ customerId }: { customerId: number }) {
 
       <div className="flex justify-end print:hidden">
         <Button variant="outline" onClick={() => window.print()}>
-          <Printer className="h-4 w-4 mr-2" />
+          <Printer className="mr-2 h-4 w-4" />
           Print / Save PDF
         </Button>
       </div>
+
+      <Sheet
+        open={selectedPaymentId !== null}
+        onOpenChange={(open) => { if (!open) setSelectedPaymentId(null); }}
+      >
+        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Payment #{selectedPayment?.id}</SheetTitle>
+          </SheetHeader>
+          {selectedPayment && (
+            <div className="mt-6 divide-y rounded-lg border">
+              <DetailRow label="Customer" value={data.customer?.name ?? "—"} />
+              <DetailRow label="Order" value={selectedPayment.orderId ? `#${selectedPayment.orderId}` : "—"} />
+              <DetailRow label="Amount Paid" value={`₹${selectedPayment.amountPaid.toFixed(2)}`} />
+              <DetailRow
+                label="Date"
+                value={new Date(selectedPayment.createdAt).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              />
+              <DetailRow label="Notes" value={selectedPayment.notes ?? "—"} />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

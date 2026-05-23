@@ -49,7 +49,7 @@ export const customerRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().min(1),
-        phoneNumber: z.string().min(1),
+        phoneNumber: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
         email: z.string().email().optional().or(z.literal("")),
         gst: z.string().optional(),
       })
